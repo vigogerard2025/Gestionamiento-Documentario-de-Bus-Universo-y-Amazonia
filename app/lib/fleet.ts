@@ -1,31 +1,23 @@
 import { differenceInDays, parseISO, isValid } from "date-fns";
 import type { DocStatus, DocInfo, VehicleRow } from "@/types/fleet";
 
-// ─── Calcula status dinámico según días restantes ─────────────────────────────
-
 export function calcDocStatus(fechaDeFin: string | null): {
   status: DocStatus;
   diasRestantes: number | null;
 } {
   if (!fechaDeFin) return { status: "SIN_DATOS", diasRestantes: null };
-
   const fin = parseISO(fechaDeFin);
   if (!isValid(fin)) return { status: "SIN_DATOS", diasRestantes: null };
-
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const dias = differenceInDays(fin, hoy);
-
   let status: DocStatus;
   if (dias < 0) status = "VENCIDO";
   else if (dias <= 7) status = "CRITICO";
   else if (dias <= 30) status = "POR_VENCER";
   else status = "VIGENTE";
-
   return { status, diasRestantes: dias };
 }
-
-// ─── Obtiene el peor status de un vehículo ───────────────────────────────────
 
 const STATUS_PRIORITY: Record<DocStatus, number> = {
   VENCIDO: 0,
@@ -44,8 +36,6 @@ export function getWorstStatus(docs: DocInfo[]): DocStatus {
   }, "SIN_DATOS" as DocStatus);
 }
 
-// ─── Formatea fecha para mostrar ─────────────────────────────────────────────
-
 export function formatDate(d: string | null): string {
   if (!d) return "—";
   const parsed = parseISO(d);
@@ -57,8 +47,6 @@ export function formatDate(d: string | null): string {
   });
 }
 
-// ─── Texto de días restantes para mostrar ─────────────────────────────────────
-
 export function formatDiasRestantes(
   dias: number | null,
   status: DocStatus,
@@ -67,10 +55,25 @@ export function formatDiasRestantes(
   if (dias === null) return "—";
   if (dias < 0) return `Venció hace ${Math.abs(dias)}d`;
   if (dias === 0) return "Vence hoy";
+  if (status === "CRITICO") return `${dias}d — CRÍTICO`;
   return `${dias}d restantes`;
 }
 
-// ─── Filtra y ordena vehículos ────────────────────────────────────────────────
+// ─── FIX PRINCIPAL: agrupa CRITICO con VENCIDO en el filtro de estado ─────────
+// El sidebar muestra "Vencido / crítico" → filtra ambos VENCIDO y CRITICO
+// "POR_VENCER" solo filtra POR_VENCER (días 8-30)
+
+function matchesEstadoFilter(
+  worstStatus: DocStatus,
+  filterEstado: string,
+): boolean {
+  if (filterEstado === "all") return true;
+  // "VENCIDO" en el filtro captura también CRITICO
+  if (filterEstado === "VENCIDO") {
+    return worstStatus === "VENCIDO" || worstStatus === "CRITICO";
+  }
+  return worstStatus === filterEstado;
+}
 
 export function filterVehicles(
   vehicles: VehicleRow[],
@@ -87,8 +90,7 @@ export function filterVehicles(
       return false;
     if (filters.propiedad !== "all" && v.tipoPropiedad !== filters.propiedad)
       return false;
-    if (filters.estado !== "all" && v.worstStatus !== filters.estado)
-      return false;
+    if (!matchesEstadoFilter(v.worstStatus, filters.estado)) return false;
     if (filters.tipoUnidad !== "all") {
       const isBus =
         v.tipoDeVehiculo?.toLowerCase().includes("ómnibus") ||

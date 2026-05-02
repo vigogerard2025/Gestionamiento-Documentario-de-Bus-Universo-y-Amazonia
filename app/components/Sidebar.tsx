@@ -10,11 +10,38 @@ type Props = {
   ) => void;
 };
 
-const statusItems: { status: DocStatus; label: string; icon: string }[] = [
-  { status: "VENCIDO", label: "Vencido / crítico", icon: "🔴" },
-  { status: "POR_VENCER", label: "Por vencer (30d)", icon: "🟡" },
-  { status: "VIGENTE", label: "Vigente", icon: "🟢" },
-  { status: "SIN_DATOS", label: "Sin datos", icon: "⚪" },
+// FIX: agrupa CRITICO con VENCIDO en los contadores, igual que en filterVehicles
+const statusItems: {
+  filterValue: string;
+  label: string;
+  dot: string;
+  countFn: (v: VehicleRow) => boolean;
+}[] = [
+  {
+    filterValue: "VENCIDO",
+    label: "Vencido / crítico",
+    dot: "bg-red-500",
+    // cuenta VENCIDO + CRITICO juntos
+    countFn: (v) => v.worstStatus === "VENCIDO" || v.worstStatus === "CRITICO",
+  },
+  {
+    filterValue: "POR_VENCER",
+    label: "Por vencer (≤30d)",
+    dot: "bg-yellow-400",
+    countFn: (v) => v.worstStatus === "POR_VENCER",
+  },
+  {
+    filterValue: "VIGENTE",
+    label: "Vigente",
+    dot: "bg-green-500",
+    countFn: (v) => v.worstStatus === "VIGENTE",
+  },
+  {
+    filterValue: "SIN_DATOS",
+    label: "Sin datos",
+    dot: "bg-gray-300",
+    countFn: (v) => v.worstStatus === "SIN_DATOS",
+  },
 ];
 
 export function Sidebar({
@@ -23,12 +50,8 @@ export function Sidebar({
   empresas,
   onFilterChange,
 }: Props) {
-  // Contadores
   const countByEmpresa = (id: number) =>
     vehicles.filter((v) => v.companyId === id).length;
-
-  const countByStatus = (s: DocStatus) =>
-    vehicles.filter((v) => v.worstStatus === s).length;
 
   const countBus = vehicles.filter(
     (v) =>
@@ -36,57 +59,65 @@ export function Sidebar({
       v.tipoDeVehiculo?.toLowerCase().includes("omnibus"),
   ).length;
 
-  const Item = ({
+  function Item({
     label,
     count,
     active,
-    icon,
+    dot,
     onClick,
   }: {
     label: string;
     count: number;
     active: boolean;
-    icon?: string;
+    dot?: string;
     onClick: () => void;
-  }) => (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-xs transition-colors ${
-        active
-          ? "bg-blue-50 text-blue-700 font-medium"
-          : "text-muted-foreground hover:bg-muted/60"
-      }`}
-    >
-      <span className="flex items-center gap-1.5">
-        {icon && <span className="text-[11px]">{icon}</span>}
-        {label}
-      </span>
-      <span
-        className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+  }) {
+    return (
+      <button
+        onClick={onClick}
+        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs transition-all ${
           active
-            ? "bg-blue-100 text-blue-700"
-            : "bg-muted text-muted-foreground"
+            ? "bg-blue-50 text-blue-700 font-semibold ring-1 ring-blue-200"
+            : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
         }`}
       >
-        {count}
-      </span>
-    </button>
-  );
+        <span className="flex items-center gap-2 min-w-0">
+          {dot && (
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${dot} ${active ? "ring-2 ring-offset-1 ring-blue-300" : ""}`}
+            />
+          )}
+          <span className="truncate">{label}</span>
+        </span>
+        <span
+          className={`text-[10px] tabular-nums px-1.5 py-0.5 rounded-full shrink-0 ml-1 ${
+            active
+              ? "bg-blue-100 text-blue-700 font-semibold"
+              : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {count}
+        </span>
+      </button>
+    );
+  }
 
-  const Section = ({
+  function Section({
     title,
     children,
   }: {
     title: string;
     children: React.ReactNode;
-  }) => (
-    <div className="flex flex-col gap-1">
-      <p className="text-[9px] font-semibold text-muted-foreground tracking-widest uppercase px-2.5 mb-1">
-        {title}
-      </p>
-      {children}
-    </div>
-  );
+  }) {
+    return (
+      <div className="flex flex-col gap-0.5">
+        <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase px-2.5 mb-1.5">
+          {title}
+        </p>
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background border border-border/40 rounded-xl p-3 flex flex-col gap-4 sticky top-[72px]">
@@ -124,7 +155,7 @@ export function Sidebar({
           onClick={() => onFilterChange("tipoUnidad", "BUS")}
         />
         <Item
-          label="Camiones"
+          label="Camiones / otros"
           count={vehicles.length - countBus}
           active={filters.tipoUnidad === "CAMION"}
           onClick={() => onFilterChange("tipoUnidad", "CAMION")}
@@ -142,12 +173,14 @@ export function Sidebar({
         />
         {statusItems.map((s) => (
           <Item
-            key={s.status}
+            key={s.filterValue}
             label={s.label}
-            count={countByStatus(s.status)}
-            active={filters.estado === s.status}
-            icon={s.icon}
-            onClick={() => onFilterChange("estado", s.status)}
+            count={vehicles.filter(s.countFn).length}
+            active={filters.estado === s.filterValue}
+            dot={s.dot}
+            onClick={() =>
+              onFilterChange("estado", s.filterValue as DocStatus | "all")
+            }
           />
         ))}
       </Section>

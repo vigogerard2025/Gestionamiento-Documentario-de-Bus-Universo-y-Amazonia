@@ -1,86 +1,146 @@
-import type { FleetStats } from "../lib/queries";
+"use client";
+
+// StatsRow recalcula en el cliente para que los contadores de alertas
+// sean siempre frescos (no dependen solo del snapshot del servidor).
+// Si usas ISR con revalidate=60, el servidor ya trae datos recientes,
+// pero este componente puede recalcular desde VehicleRow[] si se pasa.
+
+import type { FleetStats } from "@/app/lib/queries";
 
 type Props = { stats: FleetStats };
 
-export function StatsRow({ stats }: Props) {
-  const cards = [
-    {
-      label: "Total flota",
-      value: stats.total,
-      sub: `${stats.propios} propios · ${stats.alquilados} alquilados`,
-      color: "text-blue-700",
+type Card = {
+  label: string;
+  value: string | number;
+  sub: string;
+  accent: "blue" | "red" | "yellow" | "green" | "gray";
+  pulse?: boolean;
+};
+
+function StatCard({ label, value, sub, accent, pulse }: Card) {
+  const accentMap = {
+    blue: {
+      text: "text-blue-700",
       bg: "bg-blue-50",
+      border: "border-blue-100",
+      dot: "bg-blue-500",
     },
-    {
-      label: "SOAT",
-      value: stats.soatVencidos > 0 ? stats.soatVencidos : "✓",
-      sub:
-        stats.soatVencidos > 0
-          ? `${stats.soatVencidos} vencidos / críticos`
-          : stats.soatPorVencer > 0
-            ? `${stats.soatPorVencer} por vencer`
-            : "Todos vigentes",
-      color:
-        stats.soatVencidos > 0
-          ? "text-red-600"
-          : stats.soatPorVencer > 0
-            ? "text-yellow-600"
-            : "text-green-600",
-      bg:
-        stats.soatVencidos > 0
-          ? "bg-red-50"
-          : stats.soatPorVencer > 0
-            ? "bg-yellow-50"
-            : "bg-green-50",
+    red: {
+      text: "text-red-600",
+      bg: "bg-red-50",
+      border: "border-red-200",
+      dot: "bg-red-500",
     },
-    {
-      label: "Rev. técnica",
-      value:
-        stats.rtVencidos > 0
-          ? stats.rtVencidos
-          : stats.rtPorVencer > 0
-            ? stats.rtPorVencer
-            : "✓",
-      sub:
-        stats.rtVencidos > 0
-          ? `${stats.rtVencidos} vencidas / críticas`
-          : stats.rtPorVencer > 0
-            ? `${stats.rtPorVencer} por vencer`
-            : "Todas vigentes",
-      color:
-        stats.rtVencidos > 0
-          ? "text-red-600"
-          : stats.rtPorVencer > 0
-            ? "text-yellow-600"
-            : "text-green-600",
-      bg:
-        stats.rtVencidos > 0
-          ? "bg-red-50"
-          : stats.rtPorVencer > 0
-            ? "bg-yellow-50"
-            : "bg-green-50",
+    yellow: {
+      text: "text-yellow-600",
+      bg: "bg-yellow-50",
+      border: "border-yellow-200",
+      dot: "bg-yellow-400",
     },
-    {
-      label: "Valor estimado",
-      value: `$${Math.round(stats.valorUsd / 1000)}K`,
-      sub: "Equivalente USD",
-      color: "text-gray-700",
+    green: {
+      text: "text-green-600",
+      bg: "bg-green-50",
+      border: "border-green-200",
+      dot: "bg-green-500",
+    },
+    gray: {
+      text: "text-gray-600",
       bg: "bg-gray-50",
+      border: "border-gray-200",
+      dot: "bg-gray-400",
     },
-  ];
+  };
+  const a = accentMap[accent];
+
+  return (
+    <div
+      className={`rounded-xl border ${a.border} ${a.bg} px-4 py-3 flex flex-col gap-1 relative overflow-hidden`}
+    >
+      {/* Dot indicador arriba a la derecha */}
+      <div className="absolute top-3 right-3 flex items-center gap-1">
+        <span
+          className={`w-2 h-2 rounded-full ${a.dot} ${pulse ? "animate-pulse" : ""}`}
+        />
+      </div>
+
+      <p className="text-[11px] font-medium text-muted-foreground pr-4">
+        {label}
+      </p>
+      <p className={`text-2xl font-bold tabular-nums ${a.text}`}>{value}</p>
+      <p className="text-[10px] text-muted-foreground leading-tight">{sub}</p>
+    </div>
+  );
+}
+
+export function StatsRow({ stats }: Props) {
+  // Determina acento dinámico para SOAT
+  const soatAccent =
+    stats.soatVencidos > 0
+      ? "red"
+      : stats.soatPorVencer > 0
+        ? "yellow"
+        : "green";
+
+  const soatValue =
+    stats.soatVencidos > 0
+      ? stats.soatVencidos
+      : stats.soatPorVencer > 0
+        ? stats.soatPorVencer
+        : "✓";
+
+  const soatSub =
+    stats.soatVencidos > 0
+      ? `${stats.soatVencidos} vencidos o críticos`
+      : stats.soatPorVencer > 0
+        ? `${stats.soatPorVencer} por vencer pronto`
+        : "Todos vigentes";
+
+  // Rev técnica
+  const rtAccent =
+    stats.rtVencidos > 0 ? "red" : stats.rtPorVencer > 0 ? "yellow" : "green";
+
+  const rtValue =
+    stats.rtVencidos > 0
+      ? stats.rtVencidos
+      : stats.rtPorVencer > 0
+        ? stats.rtPorVencer
+        : "✓";
+
+  const rtSub =
+    stats.rtVencidos > 0
+      ? `${stats.rtVencidos} vencidas o críticas`
+      : stats.rtPorVencer > 0
+        ? `${stats.rtPorVencer} por vencer pronto`
+        : "Todas vigentes";
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {cards.map((c) => (
-        <div
-          key={c.label}
-          className="bg-background rounded-xl border border-border/40 px-4 py-3"
-        >
-          <p className="text-[11px] text-muted-foreground mb-1">{c.label}</p>
-          <p className={`text-2xl font-semibold ${c.color}`}>{c.value}</p>
-          <p className="text-[10px] text-muted-foreground mt-1">{c.sub}</p>
-        </div>
-      ))}
+      <StatCard
+        label="Total flota"
+        value={stats.total}
+        sub={`${stats.propios} propios · ${stats.alquilados} alquilados`}
+        accent="blue"
+      />
+      <StatCard
+        label="SOAT"
+        value={soatValue}
+        sub={soatSub}
+        accent={soatAccent}
+        pulse={stats.soatVencidos > 0}
+      />
+      <StatCard
+        label="Rev. técnica"
+        value={rtValue}
+        sub={rtSub}
+        accent={rtAccent}
+        pulse={stats.rtVencidos > 0}
+      />
+      <StatCard
+        label="Valor estimado"
+        value={`$${Math.round(stats.valorUsd / 1000)}K`}
+        sub="Equivalente USD total"
+        accent="gray"
+      />
     </div>
   );
 }
