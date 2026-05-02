@@ -1,125 +1,120 @@
-"use client";
-import { Card, CardContent } from "./ui/card";
+import type { VehicleRow, DocStatus } from "@/types/fleet";
+import { DOC_STATUS_CONFIG } from "@/types/fleet";
+import { formatDiasRestantes } from "../lib/fleet";
 
-type Vehicle = {
-  id: number;
-  descripcion: string;
-  marca: string;
-  modelo?: string | null;
-  placa?: string | null;
-  moneda?: string | null;
-  total?: string | null;
-  tipo_propiedad: string;
-  modalidad_de_compra?: string | null;
-  uso?: string | null;
+type Props = {
+  vehicle: VehicleRow;
+  onClick: () => void;
 };
 
-const PROPIEDAD_STYLES = {
-  PROPIO: {
-    accent: "bg-blue-500",
-    badge: "bg-blue-50 text-blue-800 border border-blue-100",
-    icon: "bg-blue-50",
-    iconStroke: "stroke-blue-600",
-    label: "Propio",
-  },
-  ALQUILADO: {
-    accent: "bg-amber-500",
-    badge: "bg-amber-50 text-amber-800 border border-amber-100",
-    icon: "bg-amber-50",
-    iconStroke: "stroke-amber-600",
-    label: "Alquilado",
-  },
+const PROPIEDAD_ACCENT: Record<string, string> = {
+  PROPIO: "bg-blue-500",
+  ALQUILADO: "bg-amber-500",
 };
 
 const MODALIDAD_BADGE: Record<string, string> = {
-  PROPIO: "bg-green-50 text-green-800 border border-green-100",
-  FINANCIADO: "bg-purple-50 text-purple-800 border border-purple-100",
-  LEASING: "bg-pink-50 text-pink-800 border border-pink-100",
+  PROPIO: "bg-green-50 text-green-700 border-green-200",
+  FINANCIADO: "bg-purple-50 text-purple-700 border-purple-200",
+  LEASING: "bg-pink-50 text-pink-700 border-pink-200",
 };
 
-export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  const style =
-    PROPIEDAD_STYLES[vehicle.tipo_propiedad as keyof typeof PROPIEDAD_STYLES] ??
-    PROPIEDAD_STYLES.PROPIO;
+function DocPill({
+  label,
+  status,
+  diasRestantes,
+}: {
+  label: string;
+  status: DocStatus;
+  diasRestantes: number | null;
+}) {
+  const cfg = DOC_STATUS_CONFIG[status];
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-[10px] text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1.5">
+        <span
+          className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${cfg.dotClass}`}
+        />
+        <span className={`text-[10px] font-medium ${cfg.colorClass}`}>
+          {formatDiasRestantes(diasRestantes, status)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function VehicleCard({ vehicle: v, onClick }: Props) {
+  const accent = PROPIEDAD_ACCENT[v.tipoPropiedad] ?? "bg-gray-400";
+  const hasAlert = ["VENCIDO", "CRITICO", "POR_VENCER"].includes(v.worstStatus);
 
   return (
-    <Card className="rounded-2xl border border-border/40 shadow-none hover:border-border/70 transition-all duration-200 overflow-hidden">
-      <div className={`h-1 ${style.accent}`} />
-      <CardContent className="p-0">
-        <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3 border-b border-border/40">
-          <div className="flex items-start gap-3">
-            <div
-              className={`w-9 h-9 rounded-xl ${style.icon} flex items-center justify-center shrink-0`}
-            >
-              <svg
-                className={`w-5 h-5 fill-none ${style.iconStroke}`}
-                strokeWidth={1.5}
-                viewBox="0 0 24 24"
-              >
-                <path d="M5 17H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h14l4 4v6a2 2 0 0 1-2 2h-2" />
-                <circle cx="7.5" cy="17.5" r="2.5" />
-                <circle cx="16.5" cy="17.5" r="2.5" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-[14px] font-medium leading-snug">
-                {vehicle.descripcion}
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {vehicle.marca}
-                {vehicle.modelo ? ` · ${vehicle.modelo}` : ""}
-              </p>
-            </div>
+    <button
+      onClick={onClick}
+      className={`w-full text-left bg-background rounded-xl border transition-all duration-150 overflow-hidden hover:-translate-y-0.5 hover:shadow-sm ${
+        hasAlert
+          ? "border-yellow-300/60 hover:border-yellow-400/80"
+          : "border-border/40 hover:border-border/70"
+      }`}
+    >
+      {/* Accent bar */}
+      <div className={`h-0.5 w-full ${accent}`} />
+
+      <div className="px-4 pt-3 pb-2">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium leading-snug truncate">
+              {v.descripcion}
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {v.marca}
+              {v.modelo ? ` · ${v.modelo}` : ""}
+            </p>
           </div>
-          <span
-            className={`text-[10px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${style.badge}`}
-          >
-            {style.label}
+          {v.modalidadDeCompra && (
+            <span
+              className={`text-[9px] font-medium px-2 py-0.5 rounded-full border shrink-0 ${
+                MODALIDAD_BADGE[v.modalidadDeCompra] ?? ""
+              }`}
+            >
+              {v.modalidadDeCompra.charAt(0) +
+                v.modalidadDeCompra.slice(1).toLowerCase()}
+            </span>
+          )}
+        </div>
+
+        {/* Plate */}
+        <div className="inline-flex items-center gap-1 bg-muted/60 border border-border/40 rounded-md px-2 py-1 mb-3">
+          <span className="font-mono text-[11px] font-semibold tracking-wide">
+            {v.placa ?? "Sin placa"}
           </span>
         </div>
 
-        <div className="px-5 py-3 flex flex-col gap-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Placa</span>
-            <span className="font-mono text-[11px] font-medium bg-muted px-2 py-0.5 rounded border border-border/40 tracking-wider">
-              {vehicle.placa ?? "—"}
-            </span>
-          </div>
-
-          {vehicle.modalidad_de_compra && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Modalidad</span>
-              <span
-                className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${MODALIDAD_BADGE[vehicle.modalidad_de_compra] ?? ""}`}
-              >
-                {vehicle.modalidad_de_compra.charAt(0) +
-                  vehicle.modalidad_de_compra.slice(1).toLowerCase()}
-              </span>
-            </div>
-          )}
-
-          {vehicle.uso && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Uso</span>
-              <span className="text-xs font-medium">{vehicle.uso}</span>
-            </div>
-          )}
-
-          <div className="h-px bg-border/40 my-0.5" />
-
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Valor</span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-[10px] text-muted-foreground">
-                {vehicle.moneda}
-              </span>
-              <span className="text-base font-semibold">
-                {vehicle.total ? Number(vehicle.total).toLocaleString() : "—"}
-              </span>
-            </div>
-          </div>
+        {/* Documents */}
+        <div className="flex flex-col gap-1.5 border-t border-border/30 pt-2.5">
+          <DocPill
+            label="SOAT"
+            status={v.soat.status}
+            diasRestantes={v.soat.diasRestantes}
+          />
+          <DocPill
+            label="Rev. técnica"
+            status={v.rt.status}
+            diasRestantes={v.rt.diasRestantes}
+          />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-2 bg-muted/20 border-t border-border/30 flex items-center justify-between">
+        <span className="text-[10px] text-muted-foreground truncate max-w-[60%]">
+          {v.empresa}
+        </span>
+        <span className="text-[11px] font-semibold">
+          {v.moneda === "USD" ? "$" : "S/"}
+          {Number(v.total ?? 0).toLocaleString("es-PE")}
+        </span>
+      </div>
+    </button>
   );
 }

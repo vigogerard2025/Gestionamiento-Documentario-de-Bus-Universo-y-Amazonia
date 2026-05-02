@@ -1,8 +1,15 @@
 "use client";
 import { useState } from "react";
 import { createVehicle } from "@/app/actions/vehicle-actions";
+type Props = {
+  empresas: Empresa[];
+};
+type Empresa = {
+  id: number;
+  nombre: string;
+};
 
-export function NewVehicleDrawer() {
+export function NewVehicleDrawer({ empresas }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -16,26 +23,26 @@ export function NewVehicleDrawer() {
     const total = (importe + mejora).toFixed(2);
 
     await createVehicle({
-      company_id: 1, // ajusta según tu lógica de empresa activa
+      companyId: 1, // ajusta según tu lógica de empresa activa
       descripcion: fd.get("descripcion") as string,
       marca: fd.get("marca") as string,
       modelo: (fd.get("modelo") as string) || null,
       placa: (fd.get("placa") as string) || null,
-      tipo_propiedad: fd.get("tipo_propiedad") as "PROPIO" | "ALQUILADO",
-      modalidad_de_compra: fd.get("modalidad_de_compra") as
+      tipoPropiedad: fd.get("tipoPropiedad") as "PROPIO" | "ALQUILADO",
+      modalidadDeCompra: fd.get("modalidad_de_compra") as
         | "PROPIO"
         | "FINANCIADO"
         | "LEASING"
         | null,
       moneda: fd.get("moneda") as "SOL" | "USD" | null,
       importe: (fd.get("importe") as string) || null,
-      tipo_cambio: (fd.get("tipo_cambio") as string) || null,
-      importe_mejora: (fd.get("importe_mejora") as string) || null,
+      tipoCambio: (fd.get("tipoCambio") as string) || null,
+      importeMejora: (fd.get("importeMejora") as string) || null,
       total,
-      tipo_de_vehiculo: (fd.get("tipo_de_vehiculo") as string) || null,
+      tipoDeVehiculo: (fd.get("tipoDeVehiculo") as string) || null,
       uso: (fd.get("uso") as string) || null,
-      fecha_de_adquisicion: (fd.get("fecha_de_adquisicion") as string) || null,
-      fecha_de_venta: (fd.get("fecha_de_venta") as string) || null,
+      fechaDeAdquisicion: (fd.get("fecha_de_adquisicion") as string) || null,
+      fechaDeVenta: (fd.get("fecha_de_venta") as string) || null,
     });
 
     setLoading(false);

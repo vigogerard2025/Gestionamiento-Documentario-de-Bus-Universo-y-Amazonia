@@ -8,6 +8,13 @@
       "when": 1777480498027,
       "tag": "0000_serious_nick_fury",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777756513068,
+      "tag": "0001_chief_toro",
+      "breakpoints": true
     }
   ]
 }
