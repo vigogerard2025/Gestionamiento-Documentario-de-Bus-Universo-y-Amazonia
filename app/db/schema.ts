@@ -20,9 +20,11 @@ export const modalidadEnum = pgEnum("modalidad_de_compra", [
   "FINANCIADO",
   "LEASING",
 ]);
+// FIX: agregado CRITICO que faltaba
 export const docEstadoEnum = pgEnum("doc_estado", [
   "VIGENTE",
   "POR_VENCER",
+  "CRITICO",
   "VENCIDO",
   "SIN_DATOS",
 ]);
@@ -37,12 +39,10 @@ export const companies = pgTable("companies", {
 });
 
 // ─── Document Types ───────────────────────────────────────────────────────────
-// Catálogo extensible: SOAT, REVISION TECNICA, TARJETA DE PROPIEDAD, etc.
 
 export const documentTypes = pgTable("document_types", {
   id: serial("id").primaryKey(),
   nombre: text("nombre").notNull().unique(),
-  // ¿El documento tiene fecha de vencimiento? (SOAT sí, Tarjeta de propiedad no)
   tieneVencimiento: text("tiene_vencimiento").default("true"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -60,29 +60,20 @@ export const vehicles = pgTable("vehicles", {
   placa: text("placa").unique(),
   tipoDeVehiculo: text("tipo_de_vehiculo"),
   uso: text("uso"),
-
-  // Propiedad y compra
   tipoPropiedad: propiedadEnum("tipo_propiedad").notNull().default("PROPIO"),
   modalidadDeCompra: modalidadEnum("modalidad_de_compra"),
-
-  // Valorización
   moneda: monedaEnum("moneda"),
   importe: numeric("importe", { precision: 12, scale: 2 }),
   tipoCambio: numeric("tipo_cambio", { precision: 8, scale: 4 }),
   importeMejora: numeric("importe_mejora", { precision: 12, scale: 2 }),
   total: numeric("total", { precision: 14, scale: 2 }),
-
-  // Fechas
   fechaDeAdquisicion: date("fecha_de_adquisicion"),
   fechaDeVenta: date("fecha_de_venta"),
-
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// ─── Vehicle Documents (tabla unificada) ──────────────────────────────────────
-// Reemplaza las tablas soat y revision_tecnica por una sola tabla genérica.
-// Así puedes agregar nuevos tipos de documentos sin tocar el schema.
+// ─── Vehicle Documents ────────────────────────────────────────────────────────
 
 export const vehicleDocuments = pgTable(
   "vehicle_documents",
@@ -94,21 +85,12 @@ export const vehicleDocuments = pgTable(
     documentTypeId: integer("document_type_id")
       .notNull()
       .references(() => documentTypes.id),
-
-    // Vigencia
     fechaDeInicio: date("fecha_de_inicio"),
     fechaDeFin: date("fecha_de_fin"),
-
-    // Estado calculado al insertar/actualizar (también se recalcula en query)
     estado: docEstadoEnum("estado").default("SIN_DATOS"),
-
-    // Archivo PDF en Supabase Storage (o cualquier proveedor)
     archivoUrl: text("archivo_url"),
     archivoNombre: text("archivo_nombre"),
-
-    // Notas opcionales
     notas: text("notas"),
-
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
