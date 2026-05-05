@@ -8,6 +8,7 @@ import {
   integer,
   date,
   index,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -126,8 +127,64 @@ export const vehicleDocumentsRelations = relations(
     }),
   }),
 );
+// ─── Loans (Préstamos / Leasing) ─────────────────────────────────────────────
+export const loanTypeEnum = pgEnum("loan_type", ["PRESTAMO", "LEASING"]);
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+export const loans = pgTable("loans", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  vehicleId: integer("vehicle_id").references(() => vehicles.id),
+  tipo: loanTypeEnum("tipo").notNull(),
+  entidad: text("entidad").notNull(),
+  nroOperacion: text("nro_operacion"),
+  monto: numeric("monto", { precision: 14, scale: 2 }).notNull(),
+  moneda: monedaEnum("moneda").notNull(),
+  tasaAnual: numeric("tasa_anual", { precision: 8, scale: 6 }),
+  plazoMeses: integer("plazo_meses"),
+  fechaInicio: date("fecha_inicio"),
+  fechaFin: date("fecha_fin"),
+  cuotaMensual: numeric("cuota_mensual", { precision: 12, scale: 2 }),
+  descripcion: text("descripcion"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const loanPayments = pgTable("loan_payments", {
+  id: serial("id").primaryKey(),
+  loanId: integer("loan_id")
+    .notNull()
+    .references(() => loans.id, { onDelete: "cascade" }),
+  nroCuota: integer("nro_cuota").notNull(),
+  fechaVencimiento: date("fecha_vencimiento").notNull(),
+  amortizacion: numeric("amortizacion", { precision: 12, scale: 2 }),
+  interes: numeric("interes", { precision: 12, scale: 2 }),
+  igv: numeric("igv", { precision: 12, scale: 2 }),
+  total: numeric("total", { precision: 12, scale: 2 }),
+  saldo: numeric("saldo", { precision: 14, scale: 2 }),
+  pagado: boolean("pagado").default(false),
+  fechaPago: date("fecha_pago"),
+});
+
+export const loansRelations = relations(loans, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [loans.companyId],
+    references: [companies.id],
+  }),
+  vehicle: one(vehicles, {
+    fields: [loans.vehicleId],
+    references: [vehicles.id],
+  }),
+  payments: many(loanPayments),
+}));
+
+export const loanPaymentsRelations = relations(loanPayments, ({ one }) => ({
+  loan: one(loans, { fields: [loanPayments.loanId], references: [loans.id] }),
+}));
+
+export type Loan = typeof loans.$inferSelect;
+export type LoanInsert = typeof loans.$inferInsert;
+export type LoanPayment = typeof loanPayments.$inferSelect;
 
 export type Company = typeof companies.$inferSelect;
 export type Vehicle = typeof vehicles.$inferSelect;

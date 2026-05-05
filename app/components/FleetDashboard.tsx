@@ -1,21 +1,25 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { VehicleRow, FleetFilters } from "@/types/fleet";
+import type { VehicleRow, FleetFilters, Payment } from "@/types/fleet";
 import type { FleetStats } from "@/app/lib/queries";
 import { filterVehicles } from "@/app/lib/fleet";
 import { StatsRow } from "@/app/components/StatsRow";
+import { LoanList } from "@/app/components/LoanList";
 import { Sidebar } from "@/app/components/Sidebar";
 import { VehicleGrid } from "@/app/components/VehicleGrid";
 import { VehicleModal } from "@/app/components/VehicleModal";
 import { AlertBanner } from "@/app/components/AlertBanner";
 import { NewVehicleDrawer } from "@/app/components/NewVehicleDrawer";
+import { ExcelExportBtn } from "./ExcelExportBtn";
+import { PaymentAlerts } from "@/app/components/PaymentAlerts";
 import { Car, X } from "lucide-react";
-
 type Props = {
   vehicles: VehicleRow[];
   stats: FleetStats;
   empresas: { id: number; nombre: string }[];
+  payments: Payment[];
+  loans: any[]; // luego lo tipamos mejor
 };
 
 const DEFAULT_FILTERS: FleetFilters = {
@@ -36,7 +40,13 @@ function isDefaultFilters(f: FleetFilters) {
   );
 }
 
-export function FleetDashboard({ vehicles, stats, empresas }: Props) {
+export function FleetDashboard({
+  vehicles,
+  stats,
+  empresas,
+  payments,
+  loans,
+}: Props) {
   const [filters, setFilters] = useState<FleetFilters>(DEFAULT_FILTERS);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleRow | null>(
     null,
@@ -89,7 +99,6 @@ export function FleetDashboard({ vehicles, stats, empresas }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Botón de reset de filtros — visible solo cuando hay filtros activos */}
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
@@ -99,11 +108,12 @@ export function FleetDashboard({ vehicles, stats, empresas }: Props) {
                 Limpiar filtros
               </button>
             )}
+            <ExcelExportBtn vehicles={filtered} payments={payments} />
             <NewVehicleDrawer empresas={empresas} />
           </div>
         </div>
 
-        {/* Barra de filtros activos — muestra qué está filtrado */}
+        {/* Pills de filtros activos */}
         {hasActiveFilters && (
           <div className="max-w-[1400px] mx-auto px-5 pb-2 flex items-center gap-2 flex-wrap">
             <span className="text-[10px] text-muted-foreground">
@@ -146,7 +156,10 @@ export function FleetDashboard({ vehicles, stats, empresas }: Props) {
         )}
       </header>
 
-      {/* ── Alert banner ── */}
+      {/* ── Alertas de cuotas de préstamos ── */}
+      <PaymentAlerts payments={payments} />
+
+      {/* ── Alert banner de documentos ── */}
       {alertVehicles.length > 0 && (
         <AlertBanner
           vehicles={alertVehicles}
@@ -169,6 +182,7 @@ export function FleetDashboard({ vehicles, stats, empresas }: Props) {
 
         <main className="flex-1 min-w-0 flex flex-col gap-4">
           <StatsRow stats={stats} />
+          <LoanList loans={loans} /> {/* 👈 AQUÍ */}
           <VehicleGrid
             vehicles={filtered}
             filters={filters}

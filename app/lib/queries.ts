@@ -8,7 +8,8 @@ import {
 import { eq } from "drizzle-orm";
 import { calcDocStatus, getWorstStatus } from "./fleet";
 import type { DocInfo, VehicleRow } from "@/types/fleet";
-
+import { loans, loanPayments } from "@/app/db/schema";
+import type { Payment } from "@/types/fleet";
 // ─── Query principal: trae vehículos con todos sus documentos ─────────────────
 
 export async function getVehiclesWithDocuments(): Promise<VehicleRow[]> {
@@ -103,7 +104,15 @@ export async function getVehiclesWithDocuments(): Promise<VehicleRow[]> {
 }
 
 // ─── Stats para los KPI cards ─────────────────────────────────────────────────
-
+export async function getLoansWithPayments() {
+  return db.query.loans.findMany({
+    with: {
+      payments: true,
+      company: true,
+      vehicle: true,
+    },
+  });
+}
 export type FleetStats = {
   total: number;
   propios: number;
@@ -152,4 +161,35 @@ export function calcFleetStats(vehicles: VehicleRow[]): FleetStats {
     stats.rtPorVencer;
 
   return stats;
+}
+export async function getUpcomingPayments(): Promise<Payment[]> {
+  const rows = await db
+    .select({
+      loanId: loanPayments.loanId,
+      entidad: loans.entidad,
+      tipo: loans.tipo,
+      nroCuota: loanPayments.nroCuota,
+      fechaVencimiento: loanPayments.fechaVencimiento,
+      total: loanPayments.total,
+      moneda: loans.moneda,
+      vehiclePlaca: vehicles.placa,
+      pagado: loanPayments.pagado,
+    })
+    .from(loanPayments)
+    .innerJoin(loans, eq(loanPayments.loanId, loans.id))
+    .leftJoin(vehicles, eq(loans.vehicleId, vehicles.id))
+    .where(eq(loanPayments.pagado, false))
+    .orderBy(loanPayments.fechaVencimiento);
+
+  return rows.map((r) => ({
+    loanId: r.loanId,
+    entidad: r.entidad,
+    tipo: r.tipo as "PRESTAMO" | "LEASING",
+    nroCuota: r.nroCuota,
+    fechaVencimiento: r.fechaVencimiento,
+    total: r.total ?? "0",
+    moneda: r.moneda as "SOL" | "USD",
+    vehiclePlaca: r.vehiclePlaca,
+    pagado: r.pagado ?? false,
+  }));
 }

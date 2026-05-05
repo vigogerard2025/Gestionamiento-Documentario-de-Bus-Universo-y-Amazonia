@@ -1,14 +1,22 @@
-import { getVehiclesWithDocuments, calcFleetStats } from "./lib/queries";
+import {
+  getVehiclesWithDocuments,
+  calcFleetStats,
+  getUpcomingPayments,
+  getLoansWithPayments,
+} from "./lib/queries";
 import { FleetDashboard } from "./components/FleetDashboard";
 
-// Forzar revalidación cada 60s (o usa revalidatePath desde actions)
 export const revalidate = 60;
 
 export default async function VehiclesPage() {
-  const vehicles = await getVehiclesWithDocuments();
-  const stats = calcFleetStats(vehicles);
+  const [vehicles, payments] = await Promise.all([
+    getVehiclesWithDocuments(),
+    getUpcomingPayments(),
+  ]);
 
-  // Obtener lista de empresas únicas para el filtro
+  const stats = calcFleetStats(vehicles);
+  const loans = await getLoansWithPayments();
+
   const empresas = Array.from(
     new Map(
       vehicles.map((v) => [
@@ -19,6 +27,12 @@ export default async function VehiclesPage() {
   );
 
   return (
-    <FleetDashboard vehicles={vehicles} stats={stats} empresas={empresas} />
+    <FleetDashboard
+      vehicles={vehicles}
+      stats={stats}
+      empresas={empresas}
+      payments={payments}
+      loans={loans}
+    />
   );
 }

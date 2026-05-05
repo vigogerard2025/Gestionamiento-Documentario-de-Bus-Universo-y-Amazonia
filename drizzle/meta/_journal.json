@@ -15,6 +15,13 @@
       "when": 1777756513068,
       "tag": "0001_chief_toro",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777908847832,
+      "tag": "0002_numerous_senator_kelly",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,678 @@
+{
+  "id": "b931f0b4-8942-42de-9e10-a915f68d3588",
+  "prevId": "69f6f949-0b77-4176-bb05-259dbb7792ba",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.companies": {
+      "name": "companies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ruc": {
+          "name": "ruc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "companies_nombre_unique": {
+          "name": "companies_nombre_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "nombre"
+          ]
+        },
+        "companies_ruc_unique": {
+          "name": "companies_ruc_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "ruc"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.document_types": {
+      "name": "document_types",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tiene_vencimiento": {
+          "name": "tiene_vencimiento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'true'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "document_types_nombre_unique": {
+          "name": "document_types_nombre_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "nombre"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.loan_payments": {
+      "name": "loan_payments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "loan_id": {
+          "name": "loan_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nro_cuota": {
+          "name": "nro_cuota",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_vencimiento": {
+          "name": "fecha_vencimiento",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amortizacion": {
+          "name": "amortizacion",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "interes": {
+          "name": "interes",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "igv": {
+          "name": "igv",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total": {
+          "name": "total",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "saldo": {
+          "name": "saldo",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pagado": {
+          "name": "pagado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "fecha_pago": {
+          "name": "fecha_pago",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "loan_payments_loan_id_loans_id_fk": {
+          "name": "loan_payments_loan_id_loans_id_fk",
+          "tableFrom": "loan_payments",
+          "tableTo": "loans",
+          "columnsFrom": [
+            "loan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.loans": {
+      "name": "loans",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vehicle_id": {
+          "name": "vehicle_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "loan_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entidad": {
+          "name": "entidad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nro_operacion": {
+          "name": "nro_operacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monto": {
+          "name": "monto",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moneda": {
+          "name": "moneda",
+          "type": "moneda",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tasa_anual": {
+          "name": "tasa_anual",
+          "type": "numeric(8, 6)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "plazo_meses": {
+          "name": "plazo_meses",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_inicio": {
+          "name": "fecha_inicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_fin": {
+          "name": "fecha_fin",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cuota_mensual": {
+          "name": "cuota_mensual",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "loans_company_id_companies_id_fk": {
+          "name": "loans_company_id_companies_id_fk",
+          "tableFrom": "loans",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "loans_vehicle_id_vehicles_id_fk": {
+          "name": "loans_vehicle_id_vehicles_id_fk",
+          "tableFrom": "loans",
+          "tableTo": "vehicles",
+          "columnsFrom": [
+            "vehicle_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vehicle_documents": {
+      "name": "vehicle_documents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vehicle_id": {
+          "name": "vehicle_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "document_type_id": {
+          "name": "document_type_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_de_inicio": {
+          "name": "fecha_de_inicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_de_fin": {
+          "name": "fecha_de_fin",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "doc_estado",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'SIN_DATOS'"
+        },
+        "archivo_url": {
+          "name": "archivo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archivo_nombre": {
+          "name": "archivo_nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notas": {
+          "name": "notas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "vehicle_doc_idx": {
+          "name": "vehicle_doc_idx",
+          "columns": [
+            {
+              "expression": "vehicle_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "document_type_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "vehicle_documents_vehicle_id_vehicles_id_fk": {
+          "name": "vehicle_documents_vehicle_id_vehicles_id_fk",
+          "tableFrom": "vehicle_documents",
+          "tableTo": "vehicles",
+          "columnsFrom": [
+            "vehicle_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "vehicle_documents_document_type_id_document_types_id_fk": {
+          "name": "vehicle_documents_document_type_id_document_types_id_fk",
+          "tableFrom": "vehicle_documents",
+          "tableTo": "document_types",
+          "columnsFrom": [
+            "document_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vehicles": {
+      "name": "vehicles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "marca": {
+          "name": "marca",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modelo": {
+          "name": "modelo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "placa": {
+          "name": "placa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_de_vehiculo": {
+          "name": "tipo_de_vehiculo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uso": {
+          "name": "uso",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_propiedad": {
+          "name": "tipo_propiedad",
+          "type": "tipo_propiedad",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PROPIO'"
+        },
+        "modalidad_de_compra": {
+          "name": "modalidad_de_compra",
+          "type": "modalidad_de_compra",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moneda": {
+          "name": "moneda",
+          "type": "moneda",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "importe": {
+          "name": "importe",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo_cambio": {
+          "name": "tipo_cambio",
+          "type": "numeric(8, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "importe_mejora": {
+          "name": "importe_mejora",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total": {
+          "name": "total",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_de_adquisicion": {
+          "name": "fecha_de_adquisicion",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_de_venta": {
+          "name": "fecha_de_venta",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "vehicles_company_id_companies_id_fk": {
+          "name": "vehicles_company_id_companies_id_fk",
+          "tableFrom": "vehicles",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "vehicles_placa_unique": {
+          "name": "vehicles_placa_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "placa"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.doc_estado": {
+      "name": "doc_estado",
+      "schema": "public",
+      "values": [
+        "VIGENTE",
+        "POR_VENCER",
+        "CRITICO",
+        "VENCIDO",
+        "SIN_DATOS"
+      ]
+    },
+    "public.loan_type": {
+      "name": "loan_type",
+      "schema": "public",
+      "values": [
+        "PRESTAMO",
+        "LEASING"
+      ]
+    },
+    "public.modalidad_de_compra": {
+      "name": "modalidad_de_compra",
+      "schema": "public",
+      "values": [
+        "PROPIO",
+        "FINANCIADO",
+        "LEASING"
+      ]
+    },
+    "public.moneda": {
+      "name": "moneda",
+      "schema": "public",
+      "values": [
+        "SOL",
+        "USD"
+      ]
+    },
+    "public.tipo_propiedad": {
+      "name": "tipo_propiedad",
+      "schema": "public",
+      "values": [
+        "PROPIO",
+        "ALQUILADO"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

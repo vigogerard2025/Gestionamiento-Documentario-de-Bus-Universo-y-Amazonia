@@ -34,7 +34,7 @@ async function main() {
     },
     {
       placa: "D1M-825",
-      inicio: "2025-12-27",
+      inicio: "2025-12-22",
       fin: "2026-12-27",
       estado: "Vigente",
     },

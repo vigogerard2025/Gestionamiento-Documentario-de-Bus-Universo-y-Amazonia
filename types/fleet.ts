@@ -112,3 +112,14 @@ export type FleetFilters = {
   propiedad: "all" | "PROPIO" | "ALQUILADO";
   search: string;
 };
+export type Payment = {
+  loanId: number;
+  entidad: string;
+  tipo: "PRESTAMO" | "LEASING";
+  nroCuota: number;
+  fechaVencimiento: string;
+  total: string;
+  moneda: "SOL" | "USD";
+  vehiclePlaca?: string | null;
+  pagado: boolean;
+};

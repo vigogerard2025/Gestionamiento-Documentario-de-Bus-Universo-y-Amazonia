@@ -22,7 +22,7 @@ function calcEstado(
 const soatData: { placa: string; inicio: string; fin: string }[] = [
   // AMAZONIA TOURS
   { placa: "AKW-788", inicio: "2025-03-22", fin: "2027-04-22" },
-  { placa: "D1M-825", inicio: "2025-01-15", fin: "2026-01-15" }, // VENCIDO
+  { placa: "D1M-825", inicio: "2026-04-22", fin: "2027-04-22" }, // VENCIDO
   { placa: "T8C-855", inicio: "2025-08-28", fin: "2026-08-28" },
   { placa: "TFM-869", inicio: "2025-09-22", fin: "2026-09-22" },
   { placa: "TFP-846", inicio: "2025-10-08", fin: "2026-10-08" },
