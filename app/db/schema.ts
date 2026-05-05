@@ -165,7 +165,11 @@ export const loanPayments = pgTable("loan_payments", {
   pagado: boolean("pagado").default(false),
   fechaPago: date("fecha_pago"),
 });
-
+export const revision_tecnica = pgTable("revision_tecnica", {
+  id: serial("id").primaryKey(),
+  vehicle_id: integer("vehicle_id"),
+  fecha: date("fecha"),
+});
 export const loansRelations = relations(loans, ({ one, many }) => ({
   company: one(companies, {
     fields: [loans.companyId],
