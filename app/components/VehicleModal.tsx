@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, FileText, Upload, Download, ExternalLink } from "lucide-react";
+import { X, FileText, Download, ExternalLink } from "lucide-react";
 import type { VehicleRow, DocInfo } from "@/types/fleet";
 import { DOC_STATUS_CONFIG } from "@/types/fleet";
 import { formatDate } from "../lib/fleet";
@@ -11,7 +11,6 @@ type Props = {
   onClose: () => void;
 };
 
-// Orden de display de documentos
 const DOC_ORDER = [
   "SOAT",
   "REVISION TECNICA",
@@ -24,8 +23,9 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
   const [pdfDoc, setPdfDoc] = useState<{ nombre: string; url: string } | null>(
     null,
   );
+  const [inputDoc, setInputDoc] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState("");
 
-  // Cerrar con Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -37,7 +37,6 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
     return () => window.removeEventListener("keydown", handler);
   }, [pdfDoc, onClose]);
 
-  // Ordenar documentos
   const orderedDocs: [string, DocInfo][] = DOC_ORDER.map((nombre) => [
     nombre,
     v.documents[nombre] ?? {
@@ -85,16 +84,16 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
               <p className="text-xs text-muted-foreground mt-0.5">
                 {v.marca}
                 {v.modelo ? ` · ${v.modelo}` : ""}
-                {v.placa ? (
+                {v.placa && (
                   <span className="font-mono ml-1 bg-muted px-1.5 py-0.5 rounded text-[10px] border border-border/40">
                     {v.placa}
                   </span>
-                ) : null}
+                )}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors shrink-0"
+              className="w-8 h-8 rounded-lg border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted"
             >
               <X className="w-4 h-4" />
             </button>
@@ -102,7 +101,7 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
 
           {/* Body */}
           <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-6">
-            {/* Info general */}
+            {/* Info */}
             <section>
               <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground mb-3">
                 Información general
@@ -114,20 +113,13 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
                       {item.label}
                     </p>
                     <p
-                      className={`text-[12px] font-medium ${
-                        item.mono ? "font-mono tracking-wide" : ""
-                      }`}
+                      className={`text-[12px] font-medium ${item.mono ? "font-mono tracking-wide" : ""}`}
                     >
                       {item.value}
                     </p>
                   </div>
                 ))}
               </div>
-              {v.uso && (
-                <p className="text-xs text-muted-foreground mt-2 px-1">
-                  Uso: {v.uso}
-                </p>
-              )}
             </section>
 
             {/* Documentos */}
@@ -135,75 +127,90 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
               <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground mb-3">
                 Documentos
               </p>
+
               <div className="flex flex-col gap-2">
                 {orderedDocs.map(([nombre, doc]) => {
                   const cfg = DOC_STATUS_CONFIG[doc.status];
+
                   return (
                     <div
                       key={nombre}
                       className="flex items-center gap-3 bg-muted/30 border border-border/40 rounded-xl px-4 py-3"
                     >
-                      {/* Icon */}
-                      <div className="w-8 h-8 rounded-lg bg-background border border-border/40 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-background border flex items-center justify-center">
                         <FileText className="w-4 h-4 text-muted-foreground" />
                       </div>
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1">
                         <p className="text-[12px] font-medium">{nombre}</p>
-                        {doc.inicio && doc.fin ? (
-                          <p className="text-[10px] text-muted-foreground">
-                            {formatDate(doc.inicio)} → {formatDate(doc.fin)}
-                          </p>
-                        ) : (
-                          <p className="text-[10px] text-muted-foreground">
-                            Sin fechas registradas
-                          </p>
-                        )}
+                        <p className="text-[10px] text-muted-foreground">
+                          {doc.inicio && doc.fin
+                            ? `${formatDate(doc.inicio)} → ${formatDate(doc.fin)}`
+                            : "Sin fechas"}
+                        </p>
                       </div>
 
-                      {/* Status badge */}
                       <span
-                        className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border ${cfg.badgeClass}`}
+                        className={`text-[10px] px-2 py-1 rounded ${cfg.badgeClass}`}
                       >
-                        {doc.diasRestantes !== null &&
-                        doc.status !== "SIN_DATOS"
-                          ? doc.diasRestantes < 0
-                            ? `Venció hace ${Math.abs(doc.diasRestantes)}d`
-                            : doc.diasRestantes === 0
-                              ? "Vence hoy"
-                              : `${doc.diasRestantes}d`
-                          : cfg.label}
+                        {cfg.label}
                       </span>
 
-                      {/* Actions */}
                       {doc.archivoUrl ? (
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            onClick={() =>
-                              setPdfDoc({
-                                nombre: `${nombre} · ${v.placa ?? v.descripcion}`,
-                                url: doc.archivoUrl!,
-                              })
-                            }
-                            className="flex items-center gap-1 text-[10px] text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg hover:bg-blue-100 transition-colors"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            Ver PDF
-                          </button>
-                          <a
-                            href={doc.archivoUrl}
-                            download={doc.archivoNombre ?? undefined}
-                            className="w-7 h-7 rounded-lg border border-border/40 flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </a>
-                        </div>
-                      ) : (
-                        <button className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted border border-border/40 px-2.5 py-1 rounded-lg hover:bg-muted/80 transition-colors shrink-0">
-                          <Upload className="w-3 h-3" />
-                          Subir PDF
+                        <button
+                          onClick={() =>
+                            setPdfDoc({
+                              nombre,
+                              url: doc.archivoUrl!,
+                            })
+                          }
+                          className="text-xs text-blue-600 border px-2 py-1 rounded"
+                        >
+                          Ver PDF
                         </button>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => {
+                              setInputDoc(nombre);
+                              setInputValue("");
+                            }}
+                            className="text-xs border px-2 py-1 rounded"
+                          >
+                            Agregar PDF
+                          </button>
+
+                          {inputDoc === nombre && (
+                            <div className="flex gap-2">
+                              <input
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                placeholder="/soat/bus1.pdf"
+                                className="border px-2 py-1 text-xs w-full"
+                              />
+
+                              <button
+                                onClick={async () => {
+                                  await fetch("/api/documentos", {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      vehicleId: v.id,
+                                      nombre,
+                                      archivoUrl: inputValue,
+                                    }),
+                                  });
+                                  window.location.reload();
+                                }}
+                                className="bg-blue-600 text-white px-2 py-1 text-xs rounded"
+                              >
+                                Guardar
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   );
@@ -214,69 +221,18 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
         </div>
       </div>
 
-      {/* PDF Viewer modal */}
+      {/* PDF MODAL */}
       {pdfDoc && (
-        <PdfViewer
-          title={pdfDoc.nombre}
-          url={pdfDoc.url}
-          onClose={() => setPdfDoc(null)}
-        />
-      )}
-    </>
-  );
-}
-
-// ─── PDF Viewer ───────────────────────────────────────────────────────────────
-
-function PdfViewer({
-  title,
-  url,
-  onClose,
-}: {
-  title: string;
-  url: string;
-  onClose: () => void;
-}) {
-  return (
-    <>
-      <div
-        className="fixed inset-0 z-60 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="fixed inset-0 z-70 flex items-center justify-center p-6 pointer-events-none">
-        <div className="bg-background border border-border/50 rounded-2xl w-full max-w-3xl h-[85vh] flex flex-col overflow-hidden shadow-2xl pointer-events-auto">
-          {/* Toolbar */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-border/40 bg-muted/30">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium">{title}</span>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60">
+          <div className="bg-white w-[90%] h-[90%] rounded-xl overflow-hidden flex flex-col">
+            <div className="flex justify-between p-2 border-b">
+              <span>{pdfDoc.nombre}</span>
+              <button onClick={() => setPdfDoc(null)}>X</button>
             </div>
-            <div className="flex items-center gap-2">
-              <a
-                href={url}
-                download
-                className="text-xs text-muted-foreground bg-background border border-border/40 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-muted transition-colors"
-              >
-                <Download className="w-3 h-3" />
-                Descargar
-              </a>
-              <button
-                onClick={onClose}
-                className="w-8 h-8 rounded-lg border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-muted"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            <iframe src={pdfDoc.url} className="flex-1 w-full" />
           </div>
-
-          {/* PDF iframe */}
-          <iframe
-            src={`${url}#toolbar=0&navpanes=0&scrollbar=1`}
-            className="flex-1 w-full"
-            title={title}
-          />
         </div>
-      </div>
+      )}
     </>
   );
 }
