@@ -23,8 +23,11 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
   const [pdfDoc, setPdfDoc] = useState<{ nombre: string; url: string } | null>(
     null,
   );
+
   const [inputDoc, setInputDoc] = useState<string | null>(null);
-  const [inputValue, setInputValue] = useState("");
+
+  // 🔥 CAMBIO REAL
+  const [inputValues, setInputValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -68,16 +71,14 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div className="bg-background border border-border/50 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl pointer-events-auto">
-          {/* Header */}
+          {/* HEADER */}
           <div className="sticky top-0 bg-background z-10 px-6 py-4 border-b border-border/40 flex items-start justify-between gap-4">
             <div>
               <h2 className="text-[15px] font-semibold">{v.descripcion}</h2>
@@ -99,9 +100,9 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
             </button>
           </div>
 
-          {/* Body */}
+          {/* BODY */}
           <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-6">
-            {/* Info */}
+            {/* INFO */}
             <section>
               <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground mb-3">
                 Información general
@@ -122,7 +123,7 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
               </div>
             </section>
 
-            {/* Documentos */}
+            {/* DOCUMENTOS */}
             <section>
               <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground mb-3">
                 Documentos
@@ -156,41 +157,61 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
                         {cfg.label}
                       </span>
 
-                      {doc.archivoUrl ? (
-                        <button
-                          onClick={() =>
-                            setPdfDoc({
-                              nombre,
-                              url: doc.archivoUrl!,
-                            })
-                          }
-                          className="text-xs text-blue-600 border px-2 py-1 rounded"
-                        >
-                          Ver PDF
-                        </button>
-                      ) : (
-                        <div className="flex flex-col gap-2">
+                      {/* 🔥 SOLO AQUÍ CAMBIÓ */}
+                      {doc.archivoUrl && inputDoc !== nombre ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              setPdfDoc({ nombre, url: doc.archivoUrl! })
+                            }
+                            className="text-xs text-blue-600 border px-2 py-1 rounded"
+                          >
+                            Ver PDF
+                          </button>
+
                           <button
                             onClick={() => {
                               setInputDoc(nombre);
-                              setInputValue("");
+                              setInputValues((prev) => ({
+                                ...prev,
+                                [nombre]: doc.archivoUrl || "",
+                              }));
                             }}
                             className="text-xs border px-2 py-1 rounded"
                           >
-                            Agregar PDF
+                            Editar
                           </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          {!doc.archivoUrl && (
+                            <button
+                              onClick={() => setInputDoc(nombre)}
+                              className="text-xs border px-2 py-1 rounded"
+                            >
+                              Agregar PDF
+                            </button>
+                          )}
 
                           {inputDoc === nombre && (
                             <div className="flex gap-2">
                               <input
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
+                                value={inputValues[nombre] || ""}
+                                onChange={(e) =>
+                                  setInputValues((prev) => ({
+                                    ...prev,
+                                    [nombre]: e.target.value,
+                                  }))
+                                }
                                 placeholder="/soat/bus1.pdf"
                                 className="border px-2 py-1 text-xs w-full"
                               />
 
                               <button
                                 onClick={async () => {
+                                  const value = inputValues[nombre];
+                                  if (!value?.trim()) return;
+
                                   await fetch("/api/documentos", {
                                     method: "POST",
                                     headers: {
@@ -199,14 +220,23 @@ export function VehicleModal({ vehicle: v, onClose }: Props) {
                                     body: JSON.stringify({
                                       vehicleId: v.id,
                                       nombre,
-                                      archivoUrl: inputValue,
+                                      archivoUrl: value,
                                     }),
                                   });
+
+                                  setInputDoc(null);
                                   window.location.reload();
                                 }}
                                 className="bg-blue-600 text-white px-2 py-1 text-xs rounded"
                               >
                                 Guardar
+                              </button>
+
+                              <button
+                                onClick={() => setInputDoc(null)}
+                                className="text-xs text-red-500"
+                              >
+                                Cancelar
                               </button>
                             </div>
                           )}
